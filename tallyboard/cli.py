@@ -22,6 +22,10 @@ def board_url(port=None):
     if env:
         return env
     p = port or DEFAULT_PORT
+    # Check if tailscale serve is actively proxying tallyboard
+    serve_url = hosts.tailscale_serve_url(p)
+    if serve_url:
+        return serve_url
     host = hosts.self_dns() or hostname()
     return f"http://{host}:{p}/"
 

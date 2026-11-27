@@ -15,7 +15,8 @@ FAKE = {"at": 1e18, "by_ip": {"100.64.0.42": "GPU-NODE"},
         "by_name": {"gpu-node": "GPU-NODE", "gpu-win11": "GPU-NODE",
                     "workstation": "workstation"},
         "online": {"GPU-NODE": True}, "self_ips": set(),
-        "self_dns": "workstation.example.ts.net"}
+        "self_dns": "workstation.example.ts.net",
+        "serve_urls": {}}
 
 
 class MachinesTest(unittest.TestCase):
@@ -39,7 +40,9 @@ class MachinesTest(unittest.TestCase):
             os.environ.pop("TALLYBOARD_URL", None)
             os.environ.pop("JOBBOARD_URL", None)
             self.assertEqual(cli.board_url(8790), "http://workstation.example.ts.net:8790/")
-            with mock.patch.dict(hosts._cache, {"self_dns": None}):
+            with mock.patch.dict(hosts._cache, {"serve_urls": {8790: "https://workstation.example.ts.net/tally/"}}):
+                self.assertEqual(cli.board_url(8790), "https://workstation.example.ts.net/tally/")
+            with mock.patch.dict(hosts._cache, {"self_dns": None, "serve_urls": {}}):
                 with mock.patch.object(cli, "hostname", return_value="workstation"):
                     self.assertEqual(cli.board_url(8790), "http://workstation:8790/")
 

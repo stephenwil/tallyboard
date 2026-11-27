@@ -56,6 +56,32 @@ def self_dns():
     return _refresh().get("self_dns")
 
 
+def tailscale_serve_url(target_port):
+    """Detect if `tailscale serve` is proxying to target_port and return the HTTPS URL."""
+    c = _refresh()
+    # Allow test mocks or custom overrides in _cache
+    if "serve_urls" in c:
+        return c["serve_urls"].get(target_port)
+    try:
+        out = subprocess.run(["tailscale", "serve", "status", "--json"],
+                             capture_output=True, text=True, timeout=3).stdout
+        data = json.loads(out or "{}")
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return None
+    web = data.get("Web") or {}
+    needle = f":{target_port}"
+    for host_port, spec in web.items():
+        handlers = spec.get("Handlers") or {}
+        for path, target in handlers.items():
+            proxy = target.get("Proxy") or ""
+            if needle in proxy:
+                host, _, port = host_port.partition(":")
+                prefix = f"https://{host}" + (f":{port}" if port and port != "443" else "")
+                clean_path = path.rstrip("/")
+                return f"{prefix}{clean_path}/"
+    return None
+
+
 def canonical(name):
     """Tailnet spelling of a host name (e.g. 'gpu-win11' -> 'GPU-NODE')."""
     if not name:
