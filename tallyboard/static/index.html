@@ -357,8 +357,24 @@ document.addEventListener("click", (e) => {
   tick();
 });
 window.addEventListener("hashchange", () => { if (location.hash) expanded.add(location.hash.slice(1)); tick(); });
-tick();
-setInterval(tick, POLL_MS);
+
+let timer = null;
+function schedule() {
+  clearTimeout(timer);
+  // If tab is in the background, poll much less frequently (15s); if visible, 3s
+  const interval = document.hidden ? 15000 : POLL_MS;
+  timer = setTimeout(async () => {
+    await tick();
+    schedule();
+  }, interval);
+}
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    tick();
+  }
+  schedule();
+});
+tick().finally(schedule);
 </script>
 </body>
 </html>
