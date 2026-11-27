@@ -43,6 +43,17 @@ Print your board's URL (automatically uses Tailscale MagicDNS when available):
 tally url
 ```
 
+## Where to Host Tallyboard (Single Hub Architecture)
+
+Tallyboard is designed around a **single hub**: one machine on your network or tailnet runs `tally serve` and stores the job history (`~/.local/share/tallyboard/`). All other machines report into it over HTTP.
+
+Preferably, run it on a machine that is **always on** (such as your primary workstation with systemd linger enabled, a home server, or a VPS on Tailscale). When choosing your host machine, consider the file-watching tradeoff:
+
+- **Hosting on your main workstation / build machine:** Recommended if you run heavy batch builds or renders locally (e.g. Blender, compilers, slicers) where progress is inferred from files appearing on disk and local worker PIDs. Remote machines (such as GPU nodes or cloud agents) report into it over Tailscale.
+- **Hosting on a dedicated always-on server / VPS / Pi:** Keeps the dashboard accessible 24/7 even when your workstation sleeps. Keep in mind that local file and PID watching only inspects the filesystem of the host running `tally serve`. Jobs running on other machines report their progress via HTTP (`tally --server URL`, `curl`, or PowerShell `Invoke-RestMethod`) rather than background disk polling.
+
+Moving the server to another machine at any time is simple: run `./install.sh` on the new host and copy over `~/.local/share/tallyboard/`.
+
 ## 30-Second Example
 
 ```bash

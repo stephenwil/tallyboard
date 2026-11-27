@@ -69,6 +69,23 @@ tally url
 
 If Tailscale is running on the server host, `tally url` automatically uses your Tailscale MagicDNS name (for example `http://workstation.tail1234.ts.net:8790/`). Otherwise it uses `http://<hostname>:8790/`. You can override this with `TALLYBOARD_URL`.
 
+### Choosing Where to Host Tallyboard (Always-On Hub vs Workstation)
+
+Tallyboard operates on a **single hub** model: one machine runs `tally serve` and stores history in `~/.local/share/tallyboard/runs/`. All other machines and threads report into it.
+
+Preferably, run it on a machine that is **always on**. When deciding which machine should be the host:
+
+1. **Main Workstation / Dev Machine (e.g. Linux workstation):**
+   - **Advantage:** Enables automatic local file-watching (`--expect` / `output`) and worker PID/log tailing (`--pid` / `--pgrep`) for silent batch jobs like Blender, slicers, or compiler sweeps that run on that machine.
+   - Remote machines (e.g. Windows GPU nodes, laptops, cloud runners) report to it over Tailscale.
+   - Ensure systemd linger is enabled (`loginctl enable-linger "$USER"`) so the user service runs continuously.
+
+2. **Dedicated Server / VPS / Raspberry Pi:**
+   - **Advantage:** Stays accessible 24/7 regardless of whether your primary laptop or workstation is asleep or rebooting.
+   - **Tradeoff:** Background file-watching and `/proc` PID watching only inspect the filesystem and process table of the machine running `tally serve`. Jobs running on your other machines must report explicitly via HTTP (`tally --server URL`, `curl`, or PowerShell `Invoke-RestMethod`) rather than relying on the server's disk poller.
+
+**Migrating to a new host:** Simply run `./install.sh` on the new machine and copy over `~/.local/share/tallyboard/`.
+
 ---
 
 ## 2. Core Concepts
