@@ -188,6 +188,12 @@ class Store:
                          ("host", host)):
                 if v is not None:
                     it[k] = v
+            # If an output path is provided and exists on disk, record it in files so it shows immediately
+            if it.get("output"):
+                base = run.get("base_dir") or "/"
+                full_path = os.path.join(base, it["output"])
+                if os.path.exists(full_path) and it["output"] not in (it.get("files") or []):
+                    it.setdefault("files", []).append(it["output"])
             if status:
                 _apply_item_status(it, status, now)
             if note is not None:

@@ -32,7 +32,7 @@ RUN=$(tally start --title "Export STLs" --expect 'out/a.stl' --expect 'out/b.stl
         --pgrep 'blender=blender -b .*export_stl')
 
 tally item   $RUN hero1 running
-tally item   $RUN hero1 done -m "42 s"             # queued | running | done | failed | skipped
+tally item   $RUN hero1 done -m "42 s" --output "renders/hero1.png" # queued | running | done | failed | skipped
 tally log    $RUN "switched to 64 samples"         # alias: note; --level warn|error
 tally exec   $RUN hero2 -- blender -b …            # running -> done/failed by exit code
 tally worker $RUN "W1" --pid 12345 --log /tmp/build.log
@@ -42,6 +42,19 @@ tally machines                                     # what is running on which ma
 ```
 
 `RUN` can be `last` (the newest active run, preferring this thread's).
+
+## Critical Rule: Visual Outputs & Images (Renders, Slices, Contact Sheets)
+
+The live board shows image thumbnails directly on item tiles and in an expanded **Images** gallery, but **only if the output image path is declared or uploaded**:
+
+1. **When starting with `--expect` (preferred for local builds/renders):**
+   - Provide the relative path or glob: `tally start --title "..." --expect "renders/*.png" --expect "previews/*.jpg"`
+   - Each matching file automatically marks its item `done` and renders as a live thumbnail on the board.
+2. **When updating items dynamically via `tally item`:**
+   - Always supply `--output <path>` if the item produced an image:
+     `tally item $RUN preview done --output "previews/contact_sheet.png"`
+3. **In repeatable specs (`.tallyboard/*.json`):**
+   - Always set `"output": "renders/{stem}.png"` on `item_sources` or `"output": "previews/sheet.png"` on `items`.
 
 **Tools that can't report** (e.g. Blender buffering stdout): give items an `output`
 (path or glob relative to the run's `base_dir`). The server polls every 3 s. An item
