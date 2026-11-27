@@ -8,6 +8,10 @@
   A tiny, zero-dependency live dashboard for long-running agent work: batch builds, renders, file-watched outputs, and cross-machine handoffs over Tailscale.
 </p>
 
+<p align="center">
+  <img src="assets/screenshot.png" alt="Tallyboard live dashboard preview" width="100%">
+</p>
+
 ---
 
 **Tallyboard** gives every repo, shell script, and AI coding agent on your network one shared live board. It is written in **Python 3 stdlib only**, with no build step, no database, and no external packages: one CLI (`tally`), one HTTP server, and one single-file live web page.
@@ -42,6 +46,17 @@ Print your board's URL (automatically uses Tailscale MagicDNS when available):
 ```bash
 tally url
 ```
+
+### Accessing the Dashboard
+
+Open any of these in your browser depending on where you are:
+
+| Where you are | URL | Notes |
+| :--- | :--- | :--- |
+| **This machine** | `http://localhost:8790` | Or `http://127.0.0.1:8790` |
+| **Local LAN** | `http://<hostname>.local:8790` | Multicast DNS (mDNS / Bonjour) |
+| **Any Tailscale device (Short name)** | `http://<hostname>:8790` | Tailscale MagicDNS search domain |
+| **Any Tailscale device (Full FQDN)** | `http://<hostname>.<tailnet>.ts.net:8790` | Always resolves across your tailnet |
 
 ## Where to Host Tallyboard (Single Hub Architecture)
 

@@ -71,6 +71,17 @@ tally url
 
 If Tailscale is running on the server host, `tally url` automatically uses your Tailscale MagicDNS name (for example `http://workstation.tail1234.ts.net:8790/`). Otherwise it uses `http://<hostname>:8790/`. You can override this with `TALLYBOARD_URL`.
 
+#### URL Options
+
+Depending on where you are browsing from, you can open:
+
+| Where you are | URL format | Example |
+| :--- | :--- | :--- |
+| **This machine** | `http://localhost:<port>` | `http://localhost:8790` |
+| **Local LAN** | `http://<hostname>.local:<port>` | `http://workstation.local:8790` (mDNS) |
+| **Any Tailscale device (Short name)** | `http://<hostname>:<port>` | `http://workstation:8790` (MagicDNS search domain) |
+| **Any Tailscale device (Full FQDN)** | `http://<hostname>.<tailnet>.ts.net:<port>` | `http://workstation.tail1234.ts.net:8790` |
+
 ### Choosing Where to Host Tallyboard (Always-On Hub vs Workstation)
 
 Tallyboard operates on a **single hub** model: one machine runs `tally serve` and stores history in `~/.local/share/tallyboard/runs/`. All other machines and threads report into it.
