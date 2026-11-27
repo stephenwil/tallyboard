@@ -54,6 +54,34 @@ Preferably, run it on a machine that is **always on** (such as your primary work
 
 Moving the server to another machine at any time is simple: run `./install.sh` on the new host and copy over `~/.local/share/tallyboard/`.
 
+## Architecture & Workflow
+
+<p align="center">
+  <a href="assets/architecture.svg">
+    <img src="assets/architecture.svg" alt="Tallyboard Architecture Infographic" width="100%">
+  </a>
+</p>
+
+### What Types of Jobs Does It Monitor?
+
+Tallyboard is designed for any multi-step, batch, or long-running work where you don't want an agent or user sitting in a loop running `ls` or `pgrep`:
+
+1. **3D Printing, Slicing & CAD Asset Pipelines**
+   - **Examples:** Batch slicing 50 plates in OrcaSlicer / BambuStudio, FreeCAD/OpenSCAD parametric exports, STEP/STL generation.
+   - **How it monitors:** Each `.3mf`, `.stl`, or `.gcode` file landing on disk automatically ticks its tile over to `done`.
+2. **Heavy 3D Renders & Visual Asset Sweeps**
+   - **Examples:** Blender Cycles CPU/GPU renders, turntables, contact sheets, and sprite sheet generation.
+   - **How it monitors:** Blender buffers stdout, so progress is inferred from completed `.png`/`.exr` files. Rendered images uploaded or written to disk display as live thumbnails on tiles and in the gallery.
+3. **Cross-Machine AI Agent Handoffs (`delegate_task`)**
+   - **Examples:** Offloading heavy render/build work from a Linux dev machine to a Windows desktop with an RTX GPU or a remote Mac runner.
+   - **How it monitors:** Handoff cards display the link arrow (`workstation → GPU-NODE`), child thread links, and live progress bars for the items assigned to the target host.
+4. **Long-Running Compiles & Matrix Test Suites**
+   - **Examples:** Firmware compilation across targets, matrix test suites, data transformations, and benchmark passes.
+   - **How it monitors:** Wrapped via `tally exec <run> <item> -- <cmd>` or repeatable `.tallyboard/<name>.json` specs with `tally run last -j 4`.
+5. **Repeatable Regression & Duration Benchmarks**
+   - **Examples:** Nightly exports or pipeline optimizations where you want to know if changes made a batch faster or slower.
+   - **How it monitors:** Repeat runs of the same spec `name` link attempts (`#1`, `#2`, …) and render side-by-side duration bars.
+
 ## 30-Second Example
 
 ```bash

@@ -1,0 +1,223 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 560" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#090d16"/>
+    </linearGradient>
+    <linearGradient id="hubGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#131c2e"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <style>
+    .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-weight: 700; fill: #f8fafc; }
+    .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; fill: #94a3b8; }
+    .col-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; }
+    .card-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; font-weight: 600; fill: #f1f5f9; }
+    .card-desc { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11.5px; fill: #94a3b8; }
+    .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; fill: #cbd5e1; }
+    .badge { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; font-weight: 600; }
+  </style>
+
+  <!-- Background Canvas -->
+  <rect width="920" height="560" rx="16" fill="url(#bg)"/>
+  <rect x="1.5" y="1.5" width="917" height="557" rx="14.5" fill="none" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Header Banner -->
+  <g transform="translate(30, 24)">
+    <!-- Mini Logo -->
+    <rect width="40" height="40" rx="9" fill="#141821"/>
+    <rect x="1" y="1" width="38" height="38" rx="8" fill="none" stroke="#2c3344" stroke-width="1.5"/>
+    <rect x="8" y="9" width="4" height="22" rx="2" fill="#3fb27f"/>
+    <rect x="15" y="9" width="4" height="22" rx="2" fill="#3fb27f"/>
+    <rect x="22" y="9" width="4" height="22" rx="2" fill="#3fb27f"/>
+    <rect x="29" y="9" width="4" height="22" rx="2" fill="#4c8dff"/>
+    <line x1="6" y1="28" x2="34" y2="12" stroke="#141821" stroke-width="6" stroke-linecap="round"/>
+    <line x1="6" y1="28" x2="34" y2="12" stroke="#f59e0b" stroke-width="4" stroke-linecap="round"/>
+
+    <text x="52" y="19" class="title" font-size="18">Tallyboard Architecture</text>
+    <text x="52" y="36" class="subtitle">Single-hub live dashboard &amp; cross-machine reporting over Tailscale</text>
+
+    <!-- Tailscale Mesh Badge -->
+    <rect x="710" y="6" width="150" height="28" rx="14" fill="rgba(14, 165, 233, 0.12)" stroke="rgba(14, 165, 233, 0.35)"/>
+    <circle cx="726" cy="20" r="4" fill="#38bdf8"/>
+    <text x="736" y="24" class="badge" fill="#38bdf8">Tailscale Tailnet Mesh</text>
+  </g>
+
+  <!-- ==================== COLUMN 1: LOCAL SILENT WORK ==================== -->
+  <g transform="translate(30, 84)">
+    <rect width="270" height="310" rx="12" fill="#1e293b" stroke="#334155" filter="url(#shadow)"/>
+    <!-- Header -->
+    <circle cx="22" cy="24" r="5" fill="#10b981"/>
+    <text x="34" y="28" class="col-title" fill="#10b981">LOCAL SILENT JOBS</text>
+
+    <!-- Box 1: Filesystem Watcher -->
+    <g transform="translate(14, 44)">
+      <rect width="242" height="76" rx="8" fill="#0f172a" fill-opacity="0.6" stroke="#334155"/>
+      <text x="12" y="20" class="card-title">Filesystem Watcher</text>
+      <text x="12" y="37" class="card-desc">Polls every 3s. Marks done when</text>
+      <text x="12" y="51" class="card-desc">output files land with fresh mtime.</text>
+      <rect x="12" y="57" width="130" height="15" rx="3" fill="#000000" fill-opacity="0.4"/>
+      <text x="16" y="68" class="code">--expect 'out/*.stl'</text>
+    </g>
+
+    <!-- Box 2: Worker Process Watcher -->
+    <g transform="translate(14, 130)">
+      <rect width="242" height="76" rx="8" fill="#0f172a" fill-opacity="0.6" stroke="#334155"/>
+      <text x="12" y="20" class="card-title">Worker Process Watch</text>
+      <text x="12" y="37" class="card-desc">Monitors PID via /proc. Tails logs</text>
+      <text x="12" y="51" class="card-desc">for errors &amp; infers running items.</text>
+      <rect x="12" y="57" width="135" height="15" rx="3" fill="#000000" fill-opacity="0.4"/>
+      <text x="16" y="68" class="code">--pgrep 'blender -b'</text>
+    </g>
+
+    <!-- Box 3: Repeatable Specs -->
+    <g transform="translate(14, 216)">
+      <rect width="242" height="80" rx="8" fill="#0f172a" fill-opacity="0.6" stroke="#334155"/>
+      <text x="12" y="20" class="card-title">Repeatable Job Specs</text>
+      <text x="12" y="37" class="card-desc">Committed JSON specs chain</text>
+      <text x="12" y="51" class="card-desc">attempts &amp; duration bar charts.</text>
+      <rect x="12" y="59" width="130" height="15" rx="3" fill="#000000" fill-opacity="0.4"/>
+      <text x="16" y="70" class="code">.tallyboard/job.json</text>
+    </g>
+  </g>
+
+  <!-- Flow Arrow Left -> Center -->
+  <g transform="translate(305, 230)">
+    <line x1="0" y1="0" x2="16" y2="0" stroke="#10b981" stroke-width="2" stroke-dasharray="4 3"/>
+    <polygon points="16,-4 22,0 16,4" fill="#10b981"/>
+    <text x="-4" y="-8" font-family="sans-serif" font-size="10" font-weight="600" fill="#10b981">Local disk</text>
+  </g>
+
+  <!-- ==================== COLUMN 2: CENTRAL HUB ==================== -->
+  <g transform="translate(330, 84)">
+    <rect width="260" height="310" rx="12" fill="url(#hubGrad)" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+    <!-- Header -->
+    <circle cx="22" cy="24" r="5" fill="#f59e0b"/>
+    <text x="34" y="28" class="col-title" fill="#f59e0b">HUB (ALWAYS ON)</text>
+    <rect x="194" y="14" width="52" height="20" rx="4" fill="rgba(245, 158, 11, 0.15)"/>
+    <text x="204" y="28" class="badge" fill="#fbbf24">:8790</text>
+
+    <!-- Box 1: HTTP API & Web UI -->
+    <g transform="translate(14, 44)">
+      <rect width="232" height="76" rx="8" fill="#0f172a" fill-opacity="0.7" stroke="#334155"/>
+      <text x="12" y="20" class="card-title">HTTP API &amp; Web Dashboard</text>
+      <text x="12" y="37" class="card-desc">Python 3 stdlib daemon. Serves live</text>
+      <text x="12" y="51" class="card-desc">self-updating UI and REST endpoints.</text>
+      <rect x="12" y="57" width="130" height="15" rx="3" fill="#000000" fill-opacity="0.4"/>
+      <text x="16" y="68" class="code">tally serve --host 0.0.0.0</text>
+    </g>
+
+    <!-- Box 2: State & Run History -->
+    <g transform="translate(14, 130)">
+      <rect width="232" height="76" rx="8" fill="#0f172a" fill-opacity="0.7" stroke="#334155"/>
+      <text x="12" y="20" class="card-title">State &amp; Run History</text>
+      <text x="12" y="37" class="card-desc">Atomic flock run.json snapshots,</text>
+      <text x="12" y="51" class="card-desc">events.jsonl audit log &amp; thumbnails.</text>
+      <rect x="12" y="57" width="150" height="15" rx="3" fill="#000000" fill-opacity="0.4"/>
+      <text x="16" y="68" class="code">~/.local/share/tallyboard/</text>
+    </g>
+
+    <!-- Box 3: Tailscale Resolver -->
+    <g transform="translate(14, 216)">
+      <rect width="232" height="80" rx="8" fill="#0f172a" fill-opacity="0.7" stroke="#334155"/>
+      <text x="12" y="20" class="card-title">Tailscale Peer Resolver</text>
+      <text x="12" y="37" class="card-desc">Polls status every 30s. Auto-credits</text>
+      <text x="12" y="51" class="card-desc">remote reports to machine hostname.</text>
+      <rect x="12" y="59" width="135" height="15" rx="3" fill="#000000" fill-opacity="0.4"/>
+      <text x="16" y="70" class="code">Machines strip &amp; dots</text>
+    </g>
+  </g>
+
+  <!-- Flow Arrow Right -> Center -->
+  <g transform="translate(595, 230)">
+    <line x1="22" y1="0" x2="6" y2="0" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4 3"/>
+    <polygon points="6,-4 0,0 6,4" fill="#38bdf8"/>
+    <text x="-4" y="-8" font-family="sans-serif" font-size="10" font-weight="600" fill="#38bdf8">HTTP POSTs</text>
+  </g>
+
+  <!-- ==================== COLUMN 3: REMOTE NODES ==================== -->
+  <g transform="translate(620, 84)">
+    <rect width="270" height="310" rx="12" fill="#1e293b" stroke="#334155" filter="url(#shadow)"/>
+    <!-- Header -->
+    <circle cx="22" cy="24" r="5" fill="#38bdf8"/>
+    <text x="34" y="28" class="col-title" fill="#38bdf8">REMOTE NODES &amp; AGENTS</text>
+
+    <!-- Box 1: Windows GPU Nodes -->
+    <g transform="translate(14, 44)">
+      <rect width="242" height="76" rx="8" fill="#0f172a" fill-opacity="0.6" stroke="#334155"/>
+      <text x="12" y="20" class="card-title">Windows GPU Desktops</text>
+      <text x="12" y="37" class="card-desc">Reports status and uploads PNG</text>
+      <text x="12" y="51" class="card-desc">thumbnails via plain PowerShell.</text>
+      <rect x="12" y="57" width="170" height="15" rx="3" fill="#000000" fill-opacity="0.4"/>
+      <text x="16" y="68" class="code">Invoke-RestMethod /api/runs</text>
+    </g>
+
+    <!-- Box 2: Mac / Cloud Runners -->
+    <g transform="translate(14, 130)">
+      <rect width="242" height="76" rx="8" fill="#0f172a" fill-opacity="0.6" stroke="#334155"/>
+      <text x="12" y="20" class="card-title">Mac &amp; Cloud Runners</text>
+      <text x="12" y="37" class="card-desc">Remote bash scripts &amp; CI workers</text>
+      <text x="12" y="51" class="card-desc">report progress with curl or CLI.</text>
+      <rect x="12" y="57" width="160" height="15" rx="3" fill="#000000" fill-opacity="0.4"/>
+      <text x="16" y="68" class="code">tally --server URL item ...</text>
+    </g>
+
+    <!-- Box 3: AI Coding Agents -->
+    <g transform="translate(14, 216)">
+      <rect width="242" height="80" rx="8" fill="#0f172a" fill-opacity="0.6" stroke="#334155"/>
+      <text x="12" y="20" class="card-title">AI Coding Agents</text>
+      <text x="12" y="37" class="card-desc">Claude Code / T3 Code delegate</text>
+      <text x="12" y="51" class="card-desc">heavy jobs and track handoff cards.</text>
+      <rect x="12" y="59" width="160" height="15" rx="3" fill="#000000" fill-opacity="0.4"/>
+      <text x="16" y="70" class="code">tally handoff --target &lt;host&gt;</text>
+    </g>
+  </g>
+
+  <!-- ==================== BOTTOM: WHAT TYPES OF JOBS ==================== -->
+  <g transform="translate(30, 412)">
+    <rect width="860" height="124" rx="12" fill="#1e293b" stroke="#334155"/>
+    <text x="18" y="24" class="col-title" fill="#e2e8f0">WHAT TYPES OF JOBS DOES IT MONITOR?</text>
+
+    <!-- 4 Category Cards -->
+    <g transform="translate(18, 36)">
+      <!-- Card 1: 3D Printing / Slicing -->
+      <rect width="195" height="74" rx="6" fill="#0f172a" fill-opacity="0.6" stroke="#10b981" stroke-width="1.5"/>
+      <text x="10" y="20" class="card-title" font-size="12">3D Prints, CAD &amp; Slicers</text>
+      <text x="10" y="36" class="card-desc" font-size="11">OrcaSlicer, Bambu, OpenSCAD.</text>
+      <text x="10" y="50" class="card-desc" font-size="11">Batch exports tracked as .3mf,</text>
+      <text x="10" y="64" class="card-desc" font-size="11">.stl, or .gcode files land.</text>
+    </g>
+
+    <g transform="translate(225, 36)">
+      <!-- Card 2: Blender / Cycles -->
+      <rect width="195" height="74" rx="6" fill="#0f172a" fill-opacity="0.6" stroke="#38bdf8" stroke-width="1.5"/>
+      <text x="10" y="20" class="card-title" font-size="12">Blender &amp; Cycles Renders</text>
+      <text x="10" y="36" class="card-desc" font-size="11">Buffered stdout renders.</text>
+      <text x="10" y="50" class="card-desc" font-size="11">Finished PNG frames show as</text>
+      <text x="10" y="64" class="card-desc" font-size="11">live thumbnails on tiles &amp; gallery.</text>
+    </g>
+
+    <g transform="translate(432, 36)">
+      <!-- Card 3: Multi-Machine Handoffs -->
+      <rect width="195" height="74" rx="6" fill="#0f172a" fill-opacity="0.6" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="10" y="20" class="card-title" font-size="12">Multi-Machine Handoffs</text>
+      <text x="10" y="36" class="card-desc" font-size="11">Heavy work offloaded to</text>
+      <text x="10" y="50" class="card-desc" font-size="11">Windows GPU rigs or remote</text>
+      <text x="10" y="64" class="card-desc" font-size="11">VMs with live route cards.</text>
+    </g>
+
+    <g transform="translate(639, 36)">
+      <!-- Card 4: Compiles & Test Suites -->
+      <rect width="203" height="74" rx="6" fill="#0f172a" fill-opacity="0.6" stroke="#a855f7" stroke-width="1.5"/>
+      <text x="10" y="20" class="card-title" font-size="12">Compiles &amp; Test Sweeps</text>
+      <text x="10" y="36" class="card-desc" font-size="11">Firmware builds across targets,</text>
+      <text x="10" y="50" class="card-desc" font-size="11">matrix test suites, data pipelines,</text>
+      <text x="10" y="64" class="card-desc" font-size="11">and duration benchmarks.</text>
+    </g>
+  </g>
+</svg>

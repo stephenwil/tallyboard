@@ -7,7 +7,9 @@ This manual covers everything you need to run **Tallyboard**, track local and re
 ## Table of Contents
 
 1. [Installation & Service Management](#1-installation--service-management)
-2. [Core Concepts](#2-core-concepts)
+2. [Core Concepts & Architecture](#2-core-concepts--architecture)
+   - [Architecture Diagram](#architecture-diagram)
+   - [What Types of Jobs Does It Monitor?](#what-types-of-jobs-does-it-monitor)
 3. [Tracking Jobs from the CLI](#3-tracking-jobs-from-the-cli)
 4. [Watching Silent Tools (Files, Globs & PIDs)](#4-watching-silent-tools-files-globs--pids)
 5. [Repeatable Job Specs](#5-repeatable-job-specs)
@@ -88,7 +90,9 @@ Preferably, run it on a machine that is **always on**. When deciding which machi
 
 ---
 
-## 2. Core Concepts
+## 2. Core Concepts & Architecture
+
+### Core Concepts
 
 | Concept | What it represents |
 |---|---|
@@ -98,6 +102,34 @@ Preferably, run it on a machine that is **always on**. When deciding which machi
 | **Handoff** | Work delegated to another machine or agent thread: `from → target`, what was sent, child thread ID/link, and status (`sent`, `running`, `done`, `failed`). |
 | **Machine** | Every run, item, worker, and handoff has a host. The **Machines** strip at the top of the page aggregates active work per host with live Tailscale online/offline dots. |
 | **Spec** | A committed JSON file (e.g. `.tallyboard/render.json`) describing a repeatable job. Runs created from the same spec `name` are linked (`attempt` #1, #2, …) so duration history is charted automatically. |
+
+### Architecture Diagram
+
+<p align="center">
+  <a href="../assets/architecture.svg">
+    <img src="../assets/architecture.svg" alt="Tallyboard Architecture Infographic" width="100%">
+  </a>
+</p>
+
+### What Types of Jobs Does It Monitor?
+
+Tallyboard is built for any batch, multi-step, or background workload:
+
+1. **3D Printing, Slicing & CAD Asset Pipelines**
+   - **Examples:** Batch slicing 50 plates in OrcaSlicer / BambuStudio, OpenSCAD parametric exports, FreeCAD STEP/STL exports.
+   - **How it monitors:** As each `.3mf`, `.stl`, or `.gcode` lands in the watched output directory, its tile marks `done` in real time.
+2. **Heavy 3D Renders & Visual Asset Sweeps**
+   - **Examples:** Blender Cycles CPU/GPU renders, turntables, contact sheets, and sprite sheet generation.
+   - **How it monitors:** Blender buffers stdout, so progress is inferred from completed `.png`/`.exr` files. Rendered images uploaded or written to disk display as live thumbnails on tiles and in the gallery.
+3. **Cross-Machine AI Agent Handoffs (`delegate_task`)**
+   - **Examples:** Offloading heavy render/build work from a Linux dev machine to a Windows desktop with an RTX GPU or a remote Mac runner.
+   - **How it monitors:** Handoff cards display the link arrow (`workstation → GPU-NODE`), child thread links, and live progress bars for the items assigned to the target host.
+4. **Long-Running Compiles & Matrix Test Suites**
+   - **Examples:** Firmware compilation across targets, matrix test suites, data transformations, and benchmark passes.
+   - **How it monitors:** Wrapped via `tally exec <run> <item> -- <cmd>` or repeatable `.tallyboard/<name>.json` specs with `tally run last -j 4`.
+5. **Repeatable Regression & Duration Benchmarks**
+   - **Examples:** Nightly exports or pipeline optimizations where you want to know if changes made a batch faster or slower.
+   - **How it monitors:** Repeat runs of the same spec `name` link attempts (`#1`, `#2`, …) and render side-by-side duration bars.
 
 ---
 
