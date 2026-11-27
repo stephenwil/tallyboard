@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tallyboard</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --panel2: #1d212a; --line: #2a2f3a;
+    --text: #e6e8ec; --muted: #8b93a3; --faint: #5c6473;
+    --done: #3fb27f; --run: #4c8dff; --fail: #e5534b; --queue: #3a404d; --skip: #7d6aa8;
+    --warn: #d9a03f; --accent: #d97706;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  a { color: #8ab4ff; text-decoration: none; } a:hover { text-decoration: underline; }
+  header { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 14px;
+           padding: 12px 24px; background: rgba(15,17,21,.92); backdrop-filter: blur(6px);
+           border-bottom: 1px solid var(--line); }
+  header img { width: 26px; height: 26px; }
+  header h1 { font-size: 17px; margin: 0; font-weight: 650; letter-spacing: .2px; }
+  header .meta { color: var(--muted); font-size: 12.5px; margin-left: auto; text-align: right; }
+  .live { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--done);
+          margin-right: 6px; vertical-align: 1px; }
+  .live.stale { background: var(--fail); }
+  main { max-width: 1280px; margin: 0 auto; padding: 18px 24px 60px; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted);
+       margin: 22px 0 10px; font-weight: 600; }
+  .empty { color: var(--faint); padding: 18px; border: 1px dashed var(--line); border-radius: 10px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+          padding: 16px 18px; margin-bottom: 16px; }
+  .card.focus { border-color: var(--accent); }
+  .title-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .title-row h3 { margin: 0; font-size: 17px; font-weight: 650; }
+  .pill { font-size: 11px; font-weight: 650; padding: 2px 8px; border-radius: 99px; text-transform: uppercase;
+          letter-spacing: .5px; background: var(--queue); color: var(--text); }
+  .pill.running, .pill.sent { background: rgba(76,141,255,.18); color: #8ab4ff; }
+  .pill.done { background: rgba(63,178,127,.18); color: #6fd3a5; }
+  .pill.failed { background: rgba(229,83,75,.18); color: #ff8d86; }
+  .pill.cancelled, .pill.exited, .pill.unknown { background: #2a2f3a; color: var(--muted); }
+  .sub { color: var(--muted); font-size: 12.5px; margin-top: 4px; display: flex; gap: 14px; flex-wrap: wrap; }
+  .sub b { color: var(--text); font-weight: 550; }
+  .mono { font-family: var(--mono); font-size: 12px; }
+  .bar { display: flex; height: 10px; border-radius: 6px; overflow: hidden; background: var(--queue); margin: 14px 0 6px; }
+  .bar > span { display: block; height: 100%; transition: width .6s; }
+  .bar .d { background: var(--done); } .bar .f { background: var(--fail); } .bar .s { background: var(--skip); }
+  .bar .r { background: repeating-linear-gradient(45deg, var(--run) 0 6px, #3b74d6 6px 12px);
+            background-size: 17px 17px; animation: slide 1s linear infinite; }
+  @keyframes slide { to { background-position: 17px 0; } }
+  .bar-text { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--muted); }
+  .bar-text b { color: var(--text); font-size: 14px; }
+  .section { margin-top: 14px; }
+  .section > .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--faint); margin-bottom: 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .worker { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px;
+            min-width: 220px; max-width: 420px; flex: 1 1 260px; }
+  .worker .top { display: flex; gap: 8px; align-items: center; }
+  .worker .tail { color: var(--muted); font-family: var(--mono); font-size: 11px; margin-top: 4px;
+                  white-space: pre-wrap; word-break: break-all; max-height: 4.6em; overflow: hidden; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); flex: none; }
+  .dot.running { background: var(--run); box-shadow: 0 0 0 3px rgba(76,141,255,.2); animation: pulse 1.6s infinite; }
+  .dot.done, .dot.exited { background: var(--done); } .dot.failed { background: var(--fail); }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(76,141,255,.05); } }
+  .handoff { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; background: var(--panel2);
+             border: 1px solid var(--line); border-left: 3px solid var(--run); border-radius: 9px;
+             padding: 9px 12px; flex: 1 1 380px; }
+  .handoff.done { border-left-color: var(--done); } .handoff.failed { border-left-color: var(--fail); }
+  .route { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .route .arrow { flex: 1; height: 2px; background: linear-gradient(90deg, var(--line), var(--run)); position: relative; min-width: 40px; }
+  .route .arrow::after { content: ""; position: absolute; right: -2px; top: -4px; border: 5px solid transparent; border-left: 7px solid var(--run); }
+  .handoff .k { color: var(--faint); font-size: 12px; } .handoff .v { font-size: 12.5px; word-break: break-word; }
+  .groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+  .group { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; }
+  .group .gh { display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 6px; }
+  .group .gh span { color: var(--muted); }
+  .tiles { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tile { position: relative; width: 38px; height: 38px; border-radius: 6px; background: var(--queue);
+          display: flex; align-items: flex-end; justify-content: center; font-size: 10px; color: rgba(255,255,255,.85);
+          overflow: hidden; cursor: default; font-family: var(--mono); }
+  .tile.wide { width: auto; min-width: 38px; padding: 0 6px; align-items: center; }
+  .tile.done { background: var(--done); color: #08160f; } .tile.running { background: var(--run); }
+  .tile.failed { background: var(--fail); } .tile.skipped { background: var(--skip); }
+  .tile.running::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
+                         animation: sweep 1.4s infinite; }
+  .tile.stale:not(.done) { box-shadow: inset 0 0 0 1.5px var(--warn); }
+  @keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+  .tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .tile .n { position: relative; padding-bottom: 2px; text-shadow: 0 0 3px rgba(0,0,0,.4); }
+  .machines { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 10px; }
+  .machine { background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--hc, var(--line));
+             border-radius: 10px; padding: 10px 12px; font-size: 12.5px; }
+  .machine.idle { opacity: .6; }
+  .machine .mh { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .machine .mh b { font-size: 14px; }
+  .machine .tag { font-size: 10.5px; color: var(--faint); border: 1px solid var(--line); border-radius: 99px; padding: 0 6px; }
+  .machine .ln { display: flex; gap: 6px; align-items: baseline; padding: 2px 0; color: var(--muted); }
+  .machine .ln .k { color: var(--faint); width: 58px; flex: none; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+  .machine .ln .v { color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .online { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: none; }
+  .online.on { background: var(--done); } .online.off { background: #5a3030; }
+  .tile .hc { position: absolute; top: 0; right: 0; width: 0; height: 0; border-top: 11px solid var(--hc); border-left: 11px solid transparent; z-index: 1; }
+  .hostchip { display: inline-flex; align-items: center; gap: 5px; }
+  .hostchip i { width: 9px; height: 9px; border-radius: 2px; background: var(--hc); display: inline-block; }
+  .legend { display: flex; gap: 12px; font-size: 11.5px; color: var(--muted); margin-top: 8px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+  .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .thumbs figure { margin: 0; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .thumbs img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #000; }
+  .thumbs figcaption { font-size: 11px; color: var(--muted); padding: 4px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .events { font-size: 12.5px; max-height: 260px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+  .ev { display: grid; grid-template-columns: 70px 70px 1fr; gap: 8px; padding: 4px 10px; border-bottom: 1px solid #1f232c; }
+  .ev:last-child { border-bottom: 0; }
+  .ev .t { color: var(--faint); font-family: var(--mono); font-size: 11.5px; }
+  .ev .ty { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .6px; }
+  .ev.error .m, .ev.failed .m { color: #ff8d86; } .ev.warn .m { color: var(--warn); }
+  .hist-spec { display: flex; gap: 6px; align-items: flex-end; height: 34px; }
+  .hist-spec div { width: 18px; background: var(--line); border-radius: 3px 3px 0 0; position: relative; }
+  .hist-spec div.cur { background: var(--accent); } .hist-spec div.failed { background: var(--fail); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; } @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  td, th { padding: 8px 12px; text-align: left; font-size: 13px; border-bottom: 1px solid #1f232c; }
+  th { color: var(--faint); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .8px; }
+  tr.row { cursor: pointer; } tr.row:hover td { background: var(--panel2); }
+  td.num { font-variant-numeric: tabular-nums; color: var(--muted); }
+  .mini { width: 90px; height: 6px; background: var(--queue); border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; }
+  .mini span { display: block; height: 100%; background: var(--done); }
+  .detail-row td { padding: 0; background: var(--bg); } .detail-row .card { margin: 10px; }
+</style>
+</head>
+<body>
+<header>
+  <img src="favicon.svg" alt="">
+  <h1>Tallyboard</h1>
+  <div class="meta"><span class="live" id="live"></span><span id="status">connecting…</span></div>
+</header>
+<main>
+  <h2>Machines</h2>
+  <div id="machines" class="machines"></div>
+  <h2>Active</h2>
+  <div id="active"></div>
+  <h2>History</h2>
+  <div id="history"></div>
+</main>
+<script>
+const POLL_MS = 3000;
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const safeUrl = (u) => /^https?:\/\//i.test(u || "") ? u : null;
+let expanded = new Set(location.hash ? [location.hash.slice(1)] : []);
+let details = {};
+let lastOk = 0;
+
+function dur(sec) {
+  sec = Math.max(0, Math.round(sec || 0));
+  const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  return h ? `${h}h ${String(m).padStart(2, "0")}m` : m ? `${m}m ${String(s).padStart(2, "0")}s` : `${s}s`;
+}
+function clock(ts) { return ts ? new Date(ts * 1000).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", second: "2-digit"}) : ""; }
+function when(ts) {
+  if (!ts) return "";
+  const d = new Date(ts * 1000), today = new Date().toDateString() === d.toDateString();
+  return today ? clock(ts) : d.toLocaleString([], {month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"});
+}
+function ago(ts) { return ts ? dur(Date.now() / 1000 - ts) + " ago" : ""; }
+function short(p) { return p ? String(p).replace(/^\/home\/[^/]+/, "~") : ""; }
+function base(p) { return p ? String(p).split("/").filter(Boolean).pop() : ""; }
+
+const HOST_COLORS = ["#d97706", "#a371f7", "#2fb5c5", "#e86fa8", "#8bc34a", "#f2cc60", "#6c9cff"];
+function hostColor(h) {
+  if (!h) return "var(--line)";
+  let x = 0; for (const ch of h.toLowerCase()) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
+  return HOST_COLORS[x % HOST_COLORS.length];
+}
+const sameHost = (a, b) => String(a || "").toLowerCase() === String(b || "").toLowerCase();
+function hostChip(h) { return `<span class="hostchip" style="--hc:${hostColor(h)}"><i></i>${esc(h)}</span>`; }
+
+function renderMachines(ms) {
+  return ms.map((m) => {
+    const busy = m.runs.length || m.workers.length || m.handoffs_in.length;
+    const on = m.online === true ? "on" : m.online === false ? "off" : "";
+    const lines = [];
+    if (m.items.total) lines.push(["items", `${m.items.done}/${m.items.total} done${m.items.running ? ` · <b>${m.items.running} running</b>` : ""}${m.items.failed ? ` · <span style="color:var(--fail)">${m.items.failed} failed</span>` : ""}`]);
+    if (m.running_items.length) lines.push(["now", m.running_items.map((i) => esc(i.label)).join(", ")]);
+    for (const w of m.workers) lines.push(["worker", `<b>${esc(w.name)}</b> <span class="mono">pid ${esc(w.pid)}</span>${w.started_at ? " · up " + dur(Date.now() / 1000 - w.started_at) : ""}`]);
+    for (const h of m.handoffs_in) {
+      const link = safeUrl(h.link);
+      lines.push(["from", `${hostChip(h.from)} <span class="pill ${esc(h.status)}">${esc(h.status)}</span> ${esc(h.what || "")}${h.total ? ` · ${h.done}/${h.total}` : ""}${h.thread ? ` · <span class="mono">${link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${esc(h.thread)}</a>` : esc(h.thread)}</span>` : ""}`]);
+    }
+    for (const r of m.runs) lines.push(["run", `<a href="#${esc(r.id)}">${esc(r.title)}</a>${r.via && !sameHost(r.via, m.name) ? ` <span style="color:var(--faint)">(run on ${esc(r.via)})</span>` : ""}`]);
+    if (m.handoffs_out) lines.push(["sent", `${m.handoffs_out} open handoff${m.handoffs_out > 1 ? "s" : ""} to other machines`]);
+    return `<div class="machine ${busy ? "" : "idle"}" style="--hc:${hostColor(m.name)}">
+      <div class="mh"><span class="online ${on}" title="${on === "on" ? "online on tailnet" : on === "off" ? "offline" : "not on tailnet"}"></span><b>${esc(m.name)}</b>
+        ${m.self ? `<span class="tag">board</span>` : ""}<span style="margin-left:auto;color:var(--faint)">${busy ? "" : "idle"}</span></div>
+      ${lines.map(([k, v]) => `<div class="ln"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("")}</div>`;
+  }).join("");
+}
+
+function bar(c, total) {
+  const pct = (n) => total ? (100 * n / total).toFixed(2) + "%" : "0";
+  return `<div class="bar"><span class="d" style="width:${pct(c.done)}"></span><span class="s" style="width:${pct(c.skipped)}"></span>
+    <span class="f" style="width:${pct(c.failed)}"></span><span class="r" style="width:${pct(c.running)}"></span></div>`;
+}
+
+function tileLabel(it) {
+  const l = it.label || it.id;
+  const m = /^(\d{1,3})[_\- ]/.exec(l);
+  if (m) return m[1];
+  const p = /plate(\d+)/i.exec(l);
+  if (p) return "P" + p[1];
+  return l.length <= 4 ? l : l.slice(0, 3);
+}
+
+function imgUrl(run, it, name) {
+  return `api/runs/${encodeURIComponent(run.id)}/file?item=${encodeURIComponent(it.id)}&name=${encodeURIComponent(name)}&v=${Math.round(it.finished_at || it.updated_at || 0)}`;
+}
+
+function renderRun(run, focus) {
+  const s = run.summary, c = s.counts;
+  const started = run.started_at, backdated = run.created_at - run.started_at > 5;
+  const groups = new Map();
+  for (const it of run.items) {
+    const g = it.group || "items";
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g).push(it);
+  }
+  const anyStale = run.items.some((i) => i.stale_files && i.status !== "done");
+  const otherHosts = [...new Set(run.items.map((i) => i.host).filter((h) => h && !sameHost(h, run.host)))];
+  const runHosts = [run.host, ...otherHosts];
+  const groupHtml = [...groups].map(([g, items]) => {
+    const done = items.filter((i) => i.status === "done").length;
+    const tiles = items.map((it) => {
+      const away = it.host && !sameHost(it.host, run.host);
+      const tip = [it.id, "on " + (it.host || run.host), it.status + (it.inferred ? ` (inferred: ${it.inferred} is on it)` : ""), it.note,
+        it.output && "expects " + it.output, it.files && it.files.length && "files: " + it.files.join(", "),
+        it.stale_files && it.status !== "done" && `${it.stale_files} old file(s) from before this run`,
+        it.finished_at && it.status === "done" && "done " + when(it.finished_at)].filter(Boolean).join("\n");
+      const img = it.images && it.images.length ? `<img loading="lazy" src="${esc(imgUrl(run, it, it.images[0]))}" alt="">` : "";
+      const lbl = tileLabel(it);
+      return `<div class="tile ${esc(it.status)} ${it.stale_files ? "stale" : ""} ${lbl.length > 3 ? "wide" : ""}" title="${esc(tip)}">${away ? `<span class="hc" style="--hc:${hostColor(it.host)}"></span>` : ""}${img}<span class="n">${esc(lbl)}</span></div>`;
+    }).join("");
+    const gh = [...new Set(items.map((i) => i.host || run.host))];
+    const ghTag = gh.length === 1 && !sameHost(gh[0], run.host) ? ` · ${hostChip(gh[0])}` : "";
+    return `<div class="group"><div class="gh"><b>${esc(g)}</b><span>${done}/${items.length}${ghTag}</span></div><div class="tiles">${tiles}</div></div>`;
+  }).join("");
+
+  const workers = (run.workers || []).map((w) => {
+    const live = w.status === "running";
+    const t = w.started_at ? (live ? "up " + dur(Date.now() / 1000 - w.started_at) : (w.ended_at ? "ended " + when(w.ended_at) : "")) : "";
+    return `<div class="worker"><div class="top"><span class="dot ${esc(w.status)}"></span><b>${esc(w.name)}</b>
+      <span class="pill ${esc(w.status)}">${esc(w.status)}</span><span class="mono" style="color:var(--muted)">${w.pid ? "pid " + esc(w.pid) : ""}</span>
+      <span style="margin-left:auto;color:var(--faint);font-size:12px">${w.host && !sameHost(w.host, run.host) ? hostChip(w.host) + " · " : ""}${esc(t)}</span></div>
+      ${w.note ? `<div style="font-size:12px;margin-top:3px">${esc(w.note)}</div>` : ""}
+      ${w.log_tail && w.log_tail.length ? `<div class="tail">${esc(w.log_tail.join("\n"))}</div>` : ""}</div>`;
+  }).join("");
+
+  const handoffs = (run.handoffs || []).map((h) => {
+    const link = safeUrl(h.link);
+    const thread = h.thread || h.link ? (link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${esc(h.thread || h.link)}</a>` : esc(h.thread || h.link)) : "";
+    return `<div class="handoff ${esc(h.status)}">
+      <div class="route">${hostChip(h.from)}<span class="arrow"></span>${hostChip(h.target)}
+        <span class="pill ${esc(h.status)}">${esc(h.status)}</span></div>
+      ${h.what ? `<span class="k">sent</span><span class="v">${esc(h.what)}</span>` : ""}
+      ${thread ? `<span class="k">thread</span><span class="v mono">${thread}</span>` : ""}
+      ${h.note ? `<span class="k">note</span><span class="v">${esc(h.note)}</span>` : ""}
+      <span class="k">since</span><span class="v">${esc(when(h.created_at))} · updated ${esc(ago(h.updated_at))}</span></div>`;
+  }).join("");
+
+  const thumbs = run.items.filter((i) => i.images && i.images.length).map((it) =>
+    `<figure><img loading="lazy" src="${esc(imgUrl(run, it, it.images[0]))}" alt=""><figcaption title="${esc(it.id)}">${esc(it.label || it.id)}</figcaption></figure>`).join("");
+
+  const events = (run.events || []).slice(0, 40).map((e) =>
+    `<div class="ev ${esc(e.level || "")} ${esc(e.status || "")}"><span class="t">${esc(clock(e.ts))}</span><span class="ty">${esc(e.type)}</span>
+     <span class="m">${esc(e.item ? e.item + " → " + e.status + (e.msg ? " · " + e.msg : "") : e.worker ? e.worker + " " + e.status + (e.msg ? " · " + e.msg : "") : e.msg)}</span></div>`).join("");
+
+  let spec = "";
+  if (run.spec_history && run.spec_history.length > 1) {
+    const max = Math.max(...run.spec_history.map((h) => h.duration || 1));
+    spec = `<div class="section"><div class="label">Spec “${esc(run.spec.name)}” · ${run.spec_history.length} runs (bar = duration)</div><div class="hist-spec">` +
+      run.spec_history.map((h) => `<div class="${h.id === run.id ? "cur" : ""} ${esc(h.status)}" style="height:${Math.max(8, 34 * (h.duration || 0) / max)}px"
+        title="#${h.attempt} ${esc(h.status)} · ${dur(h.duration)} · ${h.done}/${h.total} · ${esc(when(h.started_at))}"></div>`).join("") + `</div></div>`;
+  }
+
+  const thread = run.thread ? `<span>thread <b class="mono">${esc(run.thread)}</b></span>` : "";
+  return `<div class="card ${focus ? "focus" : ""}" id="run-${esc(run.id)}">
+    <div class="title-row"><h3>${esc(run.title)}</h3><span class="pill ${esc(s.status)}">${esc(s.status)}</span>
+      ${run.attempt > 1 ? `<span class="pill">run #${esc(run.attempt)}</span>` : ""}
+      <a class="mono" style="margin-left:auto;color:var(--faint)" href="#${esc(run.id)}">${esc(run.id)}</a></div>
+    <div class="sub"><span>repo <b>${esc(short(run.repo))}</b></span>${thread}<span>host ${hostChip(run.host)}</span>${otherHosts.length ? `<span>also ${otherHosts.map(hostChip).join(" ")}</span>` : ""}
+      <span>started <b>${esc(when(started))}</b>${backdated ? " (backdated)" : ""}</span>
+      <span>${s.status === "running" ? "elapsed" : "took"} <b>${dur(s.duration)}</b></span></div>
+    ${run.items.length ? bar(c, s.total) + `<div class="bar-text"><span><b>${c.done}</b> / ${s.total} done${c.running ? ` · ${c.running} running` : ""}${c.failed ? ` · <span style="color:var(--fail)">${c.failed} failed</span>` : ""}${c.queued ? ` · ${c.queued} queued` : ""}</span>
+      <span>${s.total ? Math.round(100 * c.done / s.total) : 0}%</span></div>` : ""}
+    ${spec}
+    ${workers ? `<div class="section"><div class="label">Workers</div><div class="chips">${workers}</div></div>` : ""}
+    ${handoffs ? `<div class="section"><div class="label">Handoffs</div><div class="chips">${handoffs}</div></div>` : ""}
+    ${groupHtml ? `<div class="section"><div class="label">Items</div><div class="groups">${groupHtml}</div>
+      <div class="legend"><span><i style="background:var(--done)"></i>done</span><span><i style="background:var(--run)"></i>running</span>
+      <span><i style="background:var(--fail)"></i>failed</span><span><i style="background:var(--queue)"></i>queued</span>
+      ${otherHosts.length ? runHosts.map((h) => `<span>${hostChip(h)}${sameHost(h, run.host) ? " (run host)" : ""}</span>`).join("") : ""}
+      ${anyStale ? `<span><i style="box-shadow:inset 0 0 0 1.5px var(--warn)"></i>old output from before this run</span>` : ""}</div></div>` : ""}
+    ${thumbs ? `<div class="section"><div class="label">Images</div><div class="thumbs">${thumbs}</div></div>` : ""}
+    ${events ? `<div class="section"><div class="label">Recent events</div><div class="events">${events}</div></div>` : ""}
+  </div>`;
+}
+
+async function getJSON(url) {
+  const r = await fetch(url, {cache: "no-store"});
+  if (!r.ok) throw new Error(url + ": " + r.status);
+  return r.json();
+}
+
+async function tick() {
+  try {
+    const data = await getJSON("api/runs");
+    const runs = data.runs;
+    const active = runs.filter((r) => r.status === "running");
+    const want = [...active.map((r) => r.id), ...runs.filter((r) => r.status !== "running" && expanded.has(r.id)).map((r) => r.id)];
+    const got = await Promise.all(want.map((id) => getJSON("api/runs/" + encodeURIComponent(id)).catch(() => null)));
+    details = {};
+    got.forEach((d) => { if (d) details[d.id] = d; });
+    const focus = location.hash.slice(1);
+
+    $("#active").innerHTML = active.length ? active.map((r) => details[r.id] ? renderRun(details[r.id], r.id === focus) : "").join("")
+      : `<div class="empty">No active runs. Start one with <span class="mono">tally start --title "…"</span> or <span class="mono">tally start --spec .tallyboard/job.json</span>.</div>`;
+
+    const hist = runs.filter((r) => r.status !== "running");
+    $("#history").innerHTML = hist.length ? `<table><tr><th></th><th>Run</th><th>Repo</th><th>Progress</th><th>Duration</th><th>Finished</th></tr>` +
+      hist.map((r) => {
+        const pct = r.total ? 100 * r.counts.done / r.total : 0;
+        const row = `<tr class="row" data-id="${esc(r.id)}"><td><span class="dot ${esc(r.status === "done" ? "done" : r.status)}"></span></td>
+          <td><b>${esc(r.title)}</b> ${r.attempt > 1 ? `<span class="pill">#${esc(r.attempt)}</span>` : ""} <span class="pill ${esc(r.status)}">${esc(r.status)}</span></td>
+          <td class="num">${esc(base(r.repo))}</td>
+          <td class="num"><span class="mini"><span style="width:${pct}%"></span></span> ${r.counts.done}/${r.total}</td>
+          <td class="num">${dur(r.duration)}</td><td class="num">${esc(when(r.finished_at))}</td></tr>`;
+        return row + (expanded.has(r.id) && details[r.id] ? `<tr class="detail-row"><td colspan="6">${renderRun(details[r.id], r.id === focus)}</td></tr>` : "");
+      }).join("") + `</table>` : `<div class="empty">No finished runs yet.</div>`;
+
+    $("#machines").innerHTML = renderMachines(data.machines || []);
+    lastOk = Date.now();
+    $("#status").textContent = `${data.host} · ${active.length} active · ${hist.length} finished · updated ${clock(data.time)}`;
+    $("#live").className = "live";
+  } catch (e) {
+    $("#live").className = "live stale";
+    $("#status").textContent = "board unreachable — retrying" + (lastOk ? ` (last update ${ago(lastOk / 1000)})` : "");
+  }
+}
+
+document.addEventListener("click", (e) => {
+  const tr = e.target.closest("tr.row");
+  if (!tr) return;
+  const id = tr.dataset.id;
+  expanded.has(id) ? expanded.delete(id) : expanded.add(id);
+  tick();
+});
+window.addEventListener("hashchange", () => { if (location.hash) expanded.add(location.hash.slice(1)); tick(); });
+tick();
+setInterval(tick, POLL_MS);
+</script>
+</body>
+</html>

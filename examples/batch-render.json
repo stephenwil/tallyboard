@@ -1,0 +1,38 @@
+{
+  "name": "batch-render",
+  "title": "Batch Cycles renders ({batch})",
+  "base_dir": "..",
+  "vars": {
+    "batch": "Batch 1"
+  },
+  "auto_finish": true,
+  "item_sources": [
+    {
+      "glob": "scenes/{batch}/*.blend",
+      "id": "{parent}/{stem}",
+      "group": "{parent}",
+      "label": "{stem}",
+      "label_sub": {
+        "_final$": ""
+      },
+      "output": "renders/{parent}/{stem}.png",
+      "cmd": "blender -b '{path}' -o 'renders/{parent}/{stem}_' -f 1"
+    }
+  ],
+  "items": [
+    {
+      "id": "contact-sheet",
+      "group": "Summary",
+      "label": "Sheet",
+      "output": "renders/{batch}/contact_sheet.png"
+    }
+  ],
+  "workers": [
+    {
+      "name": "blender",
+      "pgrep": "blender -b .*scenes/",
+      "groups": ["{batch}"],
+      "log": "/tmp/batch-render.log"
+    }
+  ]
+}

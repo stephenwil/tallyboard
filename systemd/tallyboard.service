@@ -1,0 +1,14 @@
+[Unit]
+Description=Tallyboard - live dashboard for long-running agent jobs
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 @REPO@/bin/tally serve --host 0.0.0.0 --port @PORT@
+Restart=on-failure
+RestartSec=3
+Environment=PYTHONUNBUFFERED=1
+# Environment=TALLYBOARD_TOKEN=change-me   # require a token for POSTs
+
+[Install]
+WantedBy=default.target
