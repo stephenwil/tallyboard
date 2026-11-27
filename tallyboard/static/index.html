@@ -149,6 +149,7 @@ const POLL_MS = 3000;
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const safeUrl = (u) => /^https?:\/\//i.test(u || "") ? u : null;
+const apiBase = (location.pathname.endsWith("/") ? location.pathname : location.pathname + "/");
 let expanded = new Set(location.hash ? [location.hash.slice(1)] : []);
 let details = {};
 let lastOk = 0;
@@ -214,7 +215,7 @@ function tileLabel(it) {
 }
 
 function imgUrl(run, it, name) {
-  return `api/runs/${encodeURIComponent(run.id)}/file?item=${encodeURIComponent(it.id)}&name=${encodeURIComponent(name)}&v=${Math.round(it.finished_at || it.updated_at || 0)}`;
+  return `${apiBase}api/runs/${encodeURIComponent(run.id)}/file?item=${encodeURIComponent(it.id)}&name=${encodeURIComponent(name)}&v=${Math.round(it.finished_at || it.updated_at || 0)}`;
 }
 
 function renderRun(run, focus) {
@@ -314,11 +315,11 @@ async function getJSON(url) {
 
 async function tick() {
   try {
-    const data = await getJSON("api/runs");
+    const data = await getJSON(apiBase + "api/runs");
     const runs = data.runs;
     const active = runs.filter((r) => r.status === "running");
     const want = [...active.map((r) => r.id), ...runs.filter((r) => r.status !== "running" && expanded.has(r.id)).map((r) => r.id)];
-    const got = await Promise.all(want.map((id) => getJSON("api/runs/" + encodeURIComponent(id)).catch(() => null)));
+    const got = await Promise.all(want.map((id) => getJSON(apiBase + "api/runs/" + encodeURIComponent(id)).catch(() => null)));
     details = {};
     got.forEach((d) => { if (d) details[d.id] = d; });
     const focus = location.hash.slice(1);

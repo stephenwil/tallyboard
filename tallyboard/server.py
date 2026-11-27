@@ -73,6 +73,13 @@ def make_handler(store, token=None):
             parts, q = self._parts()
             try:
                 if not parts or parts == ["index.html"]:
+                    # If behind a reverse proxy subpath (e.g. /tally) without trailing slash, redirect
+                    raw_path = urlparse(self.path).path
+                    if raw_path and not raw_path.endswith("/") and not raw_path.endswith(".html"):
+                        self.send_response(301)
+                        self.send_header("Location", raw_path + "/" + (f"?{urlparse(self.path).query}" if urlparse(self.path).query else ""))
+                        self.end_headers()
+                        return
                     return self._file(os.path.join(STATIC, "index.html"), "text/html; charset=utf-8")
                 if parts == ["favicon.svg"]:
                     return self._file(os.path.join(STATIC, "favicon.svg"), "image/svg+xml", "max-age=86400")
@@ -98,6 +105,10 @@ def make_handler(store, token=None):
             except StoreError as e:
                 return self._json({"error": str(e)}, 404)
             self._json({"error": "not found"}, 404)
+
+        def do_HEAD(self):
+            # For status checks and proxies
+            self.do_GET()
 
         def do_POST(self):
             parts, q = self._parts()
